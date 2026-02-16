@@ -164,6 +164,8 @@ function convertEventDataToWebhookPayload(eventData: any): any {
       webhookPayload.commits = payload.commits;
       webhookPayload.head_commit = payload.headCommit;
       webhookPayload.pusher = actor;
+      // 构造 compare URL
+      webhookPayload.compare = `https://github.com/${owner}/${repo}/compare/${payload.before?.slice(0, 7)}...${payload.after?.slice(0, 7)}`;
       break;
     case 'ReleaseEvent':
       webhookPayload.release = payload.release;
