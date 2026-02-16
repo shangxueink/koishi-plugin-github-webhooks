@@ -2,9 +2,9 @@ import { Context } from 'koishi'
 import { Subscribers, TABLES_SUBSCRIBERS } from '../database'
 
 export function listCommand(ctx: Context) {
-  ctx.command('wh-list', '查看订阅列表')
-    .alias('查看订阅github')
-    .option('all', '-a 查看所有订阅（需要管理员权限）', { authority: 3 })
+  ctx.command('github.list', '查看订阅列表')
+    .alias('github.查看订阅')
+    .option('all', '-a 查看所有订阅', { authority: 3 })
     .action(async ({ session, options }) => {
       if (options.all) {
         // 管理员查看所有订阅

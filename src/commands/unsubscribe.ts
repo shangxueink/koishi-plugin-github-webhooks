@@ -2,12 +2,13 @@ import { Context } from 'koishi'
 import { TABLES_SUBSCRIBERS } from '../database';
 
 export function unsubscribeCommand(ctx: Context) {
-  ctx.command('wh-unsub <owner:string> <repo:string>', '取消订阅指定 GitHub 仓库')
-    .alias('仓库取消订阅')
-    .usage('使用方法：wh-unsub owner repo\n例如：wh-unsub koishijs koishi')
+  ctx.command('github.unsub <owner:string> <repo:string>', '取消订阅指定 GitHub 仓库')
+    .alias('github.仓库取消订阅')
+    .usage('例如：github.unsub owner repo')
+    .example('github.unsub koishijs koishi')
     .action(async ({ session }, owner?: string, repo?: string) => {
       if (!owner || !repo) {
-        await session.send('请提供仓库所有者和仓库名称\n使用方法：wh-unsub owner repo\n例如：wh-unsub koishijs koishi');
+        await session.send('请提供仓库所有者和仓库名称\n使用方法：github.unsub owner repo\n例如：github.unsub koishijs koishi');
         return;
       }
 

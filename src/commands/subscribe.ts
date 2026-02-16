@@ -53,13 +53,14 @@ async function promptEventSelection(session: any): Promise<string> {
 }
 
 export function subscribeCommand(ctx: Context) {
-  ctx.command('wh-sub <owner:string> <repo:string>', '订阅指定 GitHub 仓库事件推送')
-    .alias('仓库订阅')
-    .usage('使用方法：wh-sub owner repo\n例如：wh-sub koishijs koishi')
+  ctx.command('github.sub <owner:string> <repo:string>', '订阅指定 GitHub 仓库事件推送')
+    .alias('github.仓库订阅')
+    .usage('例如：github.sub owner repo')
+    .example('github.sub koishijs koishi')
     .action(async ({ session }, owner?: string, repo?: string) => {
       // 检查参数
       if (!owner || !repo) {
-        await session.send('请提供仓库所有者和仓库名称\n使用方法：wh-sub owner repo\n例如：wh-sub koishijs koishi');
+        await session.send('请提供仓库所有者和仓库名称\n使用方法：github.sub owner repo\n例如：github.sub koishijs koishi');
         return;
       }
 
@@ -77,7 +78,7 @@ export function subscribeCommand(ctx: Context) {
       // 检查订阅是否已存在
       const exists = await ctx.database.get(TABLES_SUBSCRIBERS, { platform, target, repo: repoFullName });
       if (exists.length) {
-        await session.send(`当前已订阅仓库 ${repoFullName}\n如需修改订阅事件，请使用 wh-reset 命令`);
+        await session.send(`当前已订阅仓库 ${repoFullName}\n如需修改订阅事件，请使用 github.reset 命令`);
         return;
       }
 
