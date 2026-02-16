@@ -6,8 +6,8 @@ import { typesCommand } from './types'
 import { PluginConfig } from '..'
 
 export function applyCommands(ctx: Context, config: PluginConfig) {
-    subscribeCommand(ctx, config)
-    unsubscribeCommand(ctx, config)
-    listCommand(ctx, config)
-    typesCommand(ctx)
+  subscribeCommand(ctx, config)
+  unsubscribeCommand(ctx, config)
+  listCommand(ctx, config)
+  typesCommand(ctx)
 }

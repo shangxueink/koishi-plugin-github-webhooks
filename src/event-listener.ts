@@ -1,5 +1,5 @@
-import { Context, Element, h } from 'koishi'
-import { PluginConfig, RepositoryConfig } from '.'
+import { Context } from 'koishi'
+import { PluginConfig } from '.'
 import { sendEventMessage, buildMsgChain } from './utils'
 import { Subscribers, TABLES_SUBSCRIBERS } from './database'
 
