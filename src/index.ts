@@ -5,14 +5,29 @@ import { setupEventListeners } from './event-listener'
 import { Logger } from './logger'
 
 export const name = 'github-webhooks'
-export const inject = { required: ['database'] }
+export const reusable = false
+export const filter = false
+
+export const inject = {
+  required: ['database']
+}
+
 export const usage = `
 ---
+
+### 前置依赖：
+
 本插件依赖 adapter-github 适配器接收事件
 
--> 请先安装并配置 adapter-github
+-> 请先安装并配置 adapter-github（推荐使用webhook）
 
-开启本插件后，在对应群组使用交互指令，即可进行订阅管理
+然后开启本插件，在对应群组使用指令交互，即可进行订阅管理
+
+---
+
+### 关于指令：
+
+使用 <code>指令名称 -h</code> 即可查看指令帮助，例如 <code>github.list -h</code>
 
 ---`
 
