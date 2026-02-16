@@ -7,17 +7,23 @@ export const name = 'github-webhooks'
 export const inject = { required: ['database'] }
 export const usage = `
 ---
-本插件无需配置，请使用交互式命令进行订阅管理
+本插件依赖 adapter-github 适配器接收事件
 
--> 依赖 adapter-github 适配器接收事件,请先安装并配置 adapter-github
+-> 请先安装并配置 adapter-github
 
-开启本插件后，在对应群组交互指令，即可进行订阅管理
+开启本插件后，在对应群组使用交互指令，即可进行订阅管理
 
 ---`
 
-export interface PluginConfig { }
+export interface PluginConfig {
+  botId: string
+}
 
-export const Config: Schema<PluginConfig> = Schema.object({}).description('')
+export const Config: Schema<PluginConfig> = Schema.object({
+  botId: Schema.string()
+    .required()
+    .description('指定要监听的 GitHub Bot ID（机器人账号名）<br>-> 必填项，用于指定处理哪个 adapter-github 实例的事件<br>-> 避免多实例重复推送')
+}).description('配置说明')
 
 export function apply(ctx: Context, config: PluginConfig) {
   // 初始化数据库
@@ -27,5 +33,5 @@ export function apply(ctx: Context, config: PluginConfig) {
   applyCommands(ctx)
 
   // 监听 adapter-github 的事件
-  setupEventListeners(ctx)
+  setupEventListeners(ctx, config)
 }

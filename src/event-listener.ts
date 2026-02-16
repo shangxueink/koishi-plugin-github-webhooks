@@ -1,15 +1,21 @@
 import { Context } from 'koishi'
+import { PluginConfig } from '.'
 import { sendEventMessage, buildMsgChain } from './utils'
 import { Subscribers, TABLES_SUBSCRIBERS } from './database'
 
 /**
  * 设置事件监听器，监听 adapter-github 派发的事件
  */
-export function setupEventListeners(ctx: Context) {
+export function setupEventListeners(ctx: Context, config: PluginConfig) {
   // 监听所有 GitHub 事件
   (ctx as any).on('github/event', async (eventData: any) => {
-    const { owner, repo, type, payload } = eventData;
+    const { owner, repo, type, payload, botId } = eventData;
     const repoFullName = `${owner}/${repo}`;
+
+    // 只处理指定 bot 的事件
+    if (botId !== config.botId) {
+      return;
+    }
 
     // 查询当前仓库的所有订阅项
     let subscriptions = await ctx.database.get(TABLES_SUBSCRIBERS, { repo: repoFullName }) as Subscribers[];
