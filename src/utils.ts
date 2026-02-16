@@ -1,4 +1,5 @@
-import { Context, Element, h } from 'koishi'
+import { Context, Element, h, Universal, Bot } from 'koishi'
+import { Logger } from './logger'
 
 /**
  * 支持的事件类型配置
@@ -20,19 +21,34 @@ export const SUPPORTED_EVENTS = Object.keys(EVENT_CONFIG)
 /**
  * 根据订阅项发送消息
  */
-export function sendEventMessage(ctx: Context, subscriptions: any[], msgElement: (Element | undefined)[]) {
+export function sendEventMessage(ctx: Context, subscriptions: any[], msgElement: (Element | undefined)[], logger: Logger) {
   if (!msgElement.length) return
-  ctx.bots.forEach(bot => {
-    subscriptions.forEach(sub => {
-      try {
-        if (sub.platform.toLowerCase() === bot.platform.toLowerCase()) {
-          ctx.bots[`${bot.platform}:${bot.selfId}`].sendMessage(`${sub.target}`, msgElement, { filter: true })
-        }
-      } catch (e) {
-        ctx.logger('github-webhook').error(e)
+
+  subscriptions.forEach(sub => {
+    try {
+      // 查找对应的 bot
+      const bot = (Object.values(ctx.bots) as Bot[]).find(
+        b => b.selfId === sub.selfId || b.user?.id === sub.selfId
+      );
+
+      if (!bot) {
+        logger.warn(`未找到 bot: ${sub.selfId}`);
+        return;
       }
-    })
-  })
+
+      // 跳过 koishi 沙盒 bot 的在线检查
+      if (sub.selfId !== 'koishi' && bot.status !== Universal.Status.ONLINE) {
+        logger.debug(`bot ${sub.selfId} 不在线`);
+        return;
+      }
+
+      // 发送消息到指定频道
+      logger.debug(`发送消息: bot=${sub.selfId}, channel=${sub.channelId}`);
+      bot.sendMessage(sub.channelId, msgElement);
+    } catch (e) {
+      logger.error(`发送消息失败:`, e);
+    }
+  });
 }
 
 /**
@@ -161,9 +177,12 @@ const eventHandlers: Record<string, (payload: any) => string | null> = {
 
   issue_comment: (payload) => {
     const { comment, issue } = payload
+    // 判断是 PR 评论还是 Issue 评论
+    const isPR = !!issue.pull_request
+    const type = isPR ? 'Pull Request' : 'Issue'
     return [
       helper.repoHeader(payload.repository),
-      helper.formatItem('💬', '新评论', `Issue #${issue.number}`),
+      helper.formatItem('💬', '新评论', `${type} #${issue.number}`),
       helper.formatItem('📝', '评论内容', helper.truncate(comment.body, 100)),
       helper.formatItem('👤', '评论者', comment.user?.login),
       helper.formatLink('查看详情', comment.html_url)

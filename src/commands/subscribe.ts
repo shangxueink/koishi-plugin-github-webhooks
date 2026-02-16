@@ -74,6 +74,8 @@ export function subscribeCommand(ctx: Context) {
       const platform = session.platform;
       const type = session.guildId ? 'group' : (session.userId ? 'user' : 'channel');
       const repoFullName = `${owner}/${repo}`;
+      const selfId = session.selfId;
+      const channelId = session.channelId;
 
       // 检查订阅是否已存在
       const exists = await ctx.database.get(TABLES_SUBSCRIBERS, { platform, target, repo: repoFullName });
@@ -91,7 +93,9 @@ export function subscribeCommand(ctx: Context) {
         target,
         repo: repoFullName,
         type,
-        events
+        events,
+        selfId,
+        channelId
       });
 
       const eventDesc = events === 'all' ? '全部事件' : events.split(',').map(e => {
