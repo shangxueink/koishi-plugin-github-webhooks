@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-github-webhooks",
-  "description": "基于 adapter-github 的 GitHub 事件订阅推送插件",
+  "description": "GitHub 事件订阅推送插件",
   "version": "2.0.0",
   "contributors": [
     "bunnyi116 <1160706050@qq.com>"
@@ -29,7 +29,7 @@
   "koishi": {
     "preview": false,
     "description": {
-      "zh": "基于 adapter-github 的 GitHub 事件订阅推送插件"
+      "zh": "GitHub 事件订阅推送插件"
     },
     "service": {
       "required": [
