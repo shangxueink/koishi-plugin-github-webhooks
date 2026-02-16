@@ -4,11 +4,8 @@ import { EVENT_CONFIG, SUPPORTED_EVENTS } from '../utils'
 
 /**
  * 交互式选择事件类型
- * @param session 会话对象
- * @returns 选择的事件列表，如果选择全部则返回 'all'
  */
 async function promptEventSelection(session: any): Promise<string> {
-  // 构建事件列表
   const eventList = ['0. 全部事件'];
   SUPPORTED_EVENTS.forEach((eventKey, index) => {
     const [emoji, desc] = EVENT_CONFIG[eventKey];
@@ -26,15 +23,12 @@ async function promptEventSelection(session: any): Promise<string> {
 
   await session.send(message);
 
-  // 等待用户输入
   const userInput = await session.prompt(30000);
 
-  // 超时或未输入，默认订阅全部
   if (!userInput || userInput.trim() === '' || userInput.trim() === '0') {
     return 'all';
   }
 
-  // 解析用户输入
   const selectedIndices = userInput
     .split(/[\s,，]+/)
     .map(s => s.trim())
@@ -47,23 +41,20 @@ async function promptEventSelection(session: any): Promise<string> {
     return 'all';
   }
 
-  // 转换为事件名称
   const selectedEvents = selectedIndices.map(i => SUPPORTED_EVENTS[i - 1]);
   return selectedEvents.join(',');
 }
 
-export function subscribeCommand(ctx: Context) {
-  ctx.command('wh-sub <owner:string> <repo:string>', '订阅指定 GitHub 仓库事件推送')
-    .alias('仓库订阅')
-    .usage('使用方法：wh-sub owner repo\n例如：wh-sub koishijs koishi')
+export function resetSubscribeCommand(ctx: Context) {
+  ctx.command('wh-reset <owner:string> <repo:string>', '重置订阅事件')
+    .alias('重置订阅')
+    .usage('使用方法：wh-reset owner repo\n例如：wh-reset koishijs koishi')
     .action(async ({ session }, owner?: string, repo?: string) => {
-      // 检查参数
       if (!owner || !repo) {
-        await session.send('请提供仓库所有者和仓库名称\n使用方法：wh-sub owner repo\n例如：wh-sub koishijs koishi');
+        await session.send('请提供仓库所有者和仓库名称\n使用方法：wh-reset owner repo\n例如：wh-reset koishijs koishi');
         return;
       }
 
-      // 确定订阅目标、平台和类型
       const target = session.guildId || session.userId || session.channelId;
       if (!target) {
         await session.send('无法识别订阅目标，请在群聊、私聊或频道中使用此命令。');
@@ -71,33 +62,26 @@ export function subscribeCommand(ctx: Context) {
       }
 
       const platform = session.platform;
-      const type = session.guildId ? 'group' : (session.userId ? 'user' : 'channel');
       const repoFullName = `${owner}/${repo}`;
 
-      // 检查订阅是否已存在
+      // 检查订阅是否存在
       const exists = await ctx.database.get(TABLES_SUBSCRIBERS, { platform, target, repo: repoFullName });
-      if (exists.length) {
-        await session.send(`当前已订阅仓库 ${repoFullName}\n如需修改订阅事件，请使用 wh-reset 命令`);
+      if (!exists.length) {
+        await session.send(`当前未订阅仓库 ${repoFullName}\n请先使用 wh-sub 命令订阅`);
         return;
       }
 
       // 交互式选择事件
       const events = await promptEventSelection(session);
 
-      // 创建订阅
-      await ctx.database.create(TABLES_SUBSCRIBERS, {
-        platform,
-        target,
-        repo: repoFullName,
-        type,
-        events
-      });
+      // 更新订阅
+      await ctx.database.set(TABLES_SUBSCRIBERS, { platform, target, repo: repoFullName }, { events });
 
       const eventDesc = events === 'all' ? '全部事件' : events.split(',').map(e => {
         const [emoji, desc] = EVENT_CONFIG[e] || ['', e];
         return `${emoji}${desc}`;
       }).join('、');
 
-      await session.send(`✅ 订阅成功！\n仓库：${repoFullName}\n事件：${eventDesc}`);
+      await session.send(`✅ 重置成功！\n仓库：${repoFullName}\n事件：${eventDesc}`);
     });
 }

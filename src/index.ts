@@ -5,51 +5,27 @@ import { setupEventListeners } from './event-listener'
 
 export const name = 'github-webhooks'
 export const inject = { required: ['database'] }
+export const usage = `
+---
+本插件无需配置，请使用交互式命令进行订阅管理
 
-/**
- * 仓库配置
- */
-export interface RepositoryConfig {
-  repo: string
-  enableWatch: boolean
-  enableUnknownEvent: boolean
-}
+-> 依赖 adapter-github 适配器接收事件,请先安装并配置 adapter-github
 
-/**
- * 插件配置
- */
-export interface PluginConfig {
-  repositories: RepositoryConfig[]
-}
+开启本插件后，在对应群组交互指令，即可进行订阅管理
 
-/**
- * 插件配置
- */
-export const Config: Schema<PluginConfig> = Schema.object({
-  repositories: Schema.array(
-    Schema.object({
-      repo: Schema.string()
-        .required()
-        .description(`仓库全名，例如 owner/repo`),
+---`
 
-      enableWatch: Schema.boolean()
-        .default(false)
-        .description('是否启用 Watch 事件推送'),
+export interface PluginConfig { }
 
-      enableUnknownEvent: Schema.boolean()
-        .default(false)
-        .description('是否推送未知事件消息'),
-    })
-  ).description(`监听的仓库列表<br>-> 本插件依赖 adapter-github 适配器接收事件<br>-> 请先安装并配置 adapter-github`).default([]),
-})
+export const Config: Schema<PluginConfig> = Schema.object({}).description('')
 
 export function apply(ctx: Context, config: PluginConfig) {
   // 初始化数据库
   applyDatabase(ctx);
 
   // 注册指令
-  applyCommands(ctx, config)
+  applyCommands(ctx)
 
   // 监听 adapter-github 的事件
-  setupEventListeners(ctx, config)
+  setupEventListeners(ctx)
 }

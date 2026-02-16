@@ -1,29 +1,15 @@
 import { Context } from 'koishi'
-import { PluginConfig } from '.'
 import { sendEventMessage, buildMsgChain } from './utils'
 import { Subscribers, TABLES_SUBSCRIBERS } from './database'
 
 /**
  * 设置事件监听器，监听 adapter-github 派发的事件
  */
-export function setupEventListeners(ctx: Context, config: PluginConfig) {
+export function setupEventListeners(ctx: Context) {
   // 监听所有 GitHub 事件
   (ctx as any).on('github/event', async (eventData: any) => {
     const { owner, repo, type, payload } = eventData;
     const repoFullName = `${owner}/${repo}`;
-
-    // 检查仓库是否在配置中
-    const repoConfig = config.repositories.find(item => item.repo === repoFullName);
-
-    // 如果仓库不在配置中，忽略该事件
-    if (!repoConfig) {
-      return;
-    }
-
-    // 检查是否启用 Watch 事件
-    if (type === 'WatchEvent' && !repoConfig.enableWatch) {
-      return;
-    }
 
     // 查询当前仓库的所有订阅项
     let subscriptions = await ctx.database.get(TABLES_SUBSCRIBERS, { repo: repoFullName }) as Subscribers[];
@@ -36,12 +22,7 @@ export function setupEventListeners(ctx: Context, config: PluginConfig) {
       // 将 GitHub 事件类型转换为 webhook 事件名称
       const eventName = convertEventTypeToWebhookName(type);
 
-      if (allowedEvents.includes(eventName)) {
-        return true;
-      } else {
-        // 如果配置了未知事件推送，则允许未知事件
-        return repoConfig.enableUnknownEvent;
-      }
+      return allowedEvents.includes(eventName);
     });
 
     if (!subscriptions.length) {
@@ -53,7 +34,7 @@ export function setupEventListeners(ctx: Context, config: PluginConfig) {
     const eventName = convertEventTypeToWebhookName(type);
 
     // 构造消息链
-    const msgChain = buildMsgChain(ctx, eventName, webhookPayload, repoConfig);
+    const msgChain = buildMsgChain(ctx, eventName, webhookPayload);
 
     // 如果消息链为空，则不推送
     if (msgChain && msgChain.length) {
@@ -97,7 +78,7 @@ function convertEventDataToWebhookPayload(eventData: any): any {
       login: owner,
     },
     html_url: `https://github.com/${owner}/${repo}`,
-    stargazers_count: 0, // 这个信息在事件中可能没有
+    stargazers_count: 0,
   };
 
   // 构造 sender 对象
@@ -158,7 +139,6 @@ function convertEventDataToWebhookPayload(eventData: any): any {
       webhookPayload.release = payload.release;
       break;
     case 'WatchEvent':
-      // Watch 事件（star）
       webhookPayload.action = payload.action || 'started';
       break;
   }

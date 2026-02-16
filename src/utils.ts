@@ -1,14 +1,25 @@
-import { RepositoryConfig } from '.'
 import { Context, Element, h } from 'koishi'
 
-/** 从 URL 中提取 GitHub 仓库路径信息 */
-export function getGithubRegURL(url: string): string {
-  const regex = /(?<=https:\/\/github\.com).*/
-  const res = url.match(regex)
-  return res ? res[0] : ''
-}
+/**
+ * 支持的事件类型配置
+ */
+export const EVENT_CONFIG = {
+  star: ['⭐', 'Star 事件'],
+  push: ['🚀', '代码推送'],
+  workflow_run: ['⚙️', '工作流'],
+  issues: ['📝', 'Issue 操作'],
+  pull_request: ['🔀', 'PR 操作'],
+  release: ['🏷️', '版本发布'],
+  issue_comment: ['💬', 'Issue 评论'],
+  fork: ['⑂', '仓库 Fork'],
+  watch: ['👀', '仓库关注']
+} as const
 
-/** 根据订阅项发送消息 */
+export const SUPPORTED_EVENTS = Object.keys(EVENT_CONFIG)
+
+/**
+ * 根据订阅项发送消息
+ */
 export function sendEventMessage(ctx: Context, subscriptions: any[], msgElement: (Element | undefined)[]) {
   if (!msgElement.length) return
   ctx.bots.forEach(bot => {
@@ -32,7 +43,6 @@ const helper = {
     `📦 仓库：${repo?.full_name || '未知仓库'}`,
 
   formatItem: (emoji: string, label: string, value?: any): string => {
-    // 安全处理所有值类型
     const strValue = value !== undefined && value !== null
       ? value.toString().trim()
       : ''
@@ -93,7 +103,7 @@ const eventHandlers: Record<string, (payload: any) => string | null> = {
 
     const start = new Date(workflow.run_started_at || workflow.created_at)
     const end = new Date(workflow.updated_at)
-    const duration = Math.round((end.getTime() - start.getTime()) / 1000) // 转为秒
+    const duration = Math.round((end.getTime() - start.getTime()) / 1000)
 
     return [
       helper.repoHeader(payload.repository),
@@ -216,30 +226,19 @@ const eventHandlers: Record<string, (payload: any) => string | null> = {
     helper.formatItem('👤', '操作者', payload.sender?.login),
     helper.formatLink('查看仓库', payload.repository.html_url)
   ].filter(Boolean).join('\n'),
-
-  unknown: (payload) => {
-    const { action, repository, sender } = payload
-    return [
-      helper.repoHeader(repository),
-      helper.formatItem('❓', '未知事件', action),
-      helper.formatItem('👤', '操作者', sender?.login),
-      helper.formatLink('查看详情', repository.html_url)
-    ].filter(Boolean).join('\n')
-  },
 }
 
-// 主消息构建函数
-export function buildMsgChain(ctx: Context, payload_event: string, payload: any, config: RepositoryConfig): (Element | null)[] {
+/**
+ * 主消息构建函数
+ */
+export function buildMsgChain(ctx: Context, payload_event: string, payload: any): (Element | null)[] {
   try {
-    let handler = eventHandlers[payload_event]
-    if (handler == null || undefined) {
-      // 如果没有找到对应的事件处理器，则检查是否允许处理未知事件
-      if (config.enableUnknownEvent) {
-        handler = eventHandlers['unknown'];
-      }
+    const handler = eventHandlers[payload_event]
+    if (!handler) {
+      return []
     }
     const content = handler(payload)
-    return content ? [h('message', content)] : null
+    return content ? [h('message', content)] : []
   } catch (error) {
     ctx?.logger('github-webhooks').warn('消息生成失败:', error)
     return []
